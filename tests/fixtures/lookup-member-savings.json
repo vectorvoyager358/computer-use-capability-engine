@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "lookup-member-savings",
+  "name": "Look up member savings balance",
+  "description": "Search a member by ID and read the savings balance from the member detail table.",
+  "revision": 1,
+  "app": {
+    "family": "core-servicing",
+    "surface": "web",
+    "entryPoint": "http://127.0.0.1:4173/"
+  },
+  "parameters": [
+    {
+      "name": "memberId",
+      "type": "string",
+      "sensitivity": "identifier",
+      "description": "Member number to look up"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "savingsBalance",
+      "type": "money",
+      "sensitivity": "financial",
+      "description": "Current savings balance as displayed on the member detail table"
+    }
+  ],
+  "steps": [
+    {
+      "id": "open-app",
+      "action": "navigate",
+      "url": { "kind": "entry" },
+      "risk": "read"
+    },
+    {
+      "id": "fill-member-id",
+      "action": "fill",
+      "target": {
+        "candidates": [
+          { "strategy": "role_name", "role": "textbox", "name": "Member ID" },
+          { "strategy": "label", "label": "Member ID" }
+        ]
+      },
+      "value": { "kind": "param", "name": "memberId" },
+      "risk": "reversible"
+    },
+    {
+      "id": "click-search",
+      "action": "click",
+      "target": {
+        "candidates": [
+          { "strategy": "role_name", "role": "button", "name": "Search" }
+        ]
+      },
+      "risk": "read",
+      "on": [
+        {
+          "match": { "kind": "text", "value": "Member not found" },
+          "then": { "type": "business_outcome", "code": "member_not_found" }
+        }
+      ]
+    },
+    {
+      "id": "extract-balance",
+      "action": "extract",
+      "target": {
+        "candidates": [
+          {
+            "strategy": "table_cell",
+            "rowText": "Savings",
+            "columnHeader": "Balance"
+          }
+        ]
+      },
+      "output": "savingsBalance",
+      "risk": "read"
+    }
+  ],
+  "success": {
+    "checkpoint": { "kind": "heading", "value": "Member detail" },
+    "outputs": ["savingsBalance"]
+  }
+}
