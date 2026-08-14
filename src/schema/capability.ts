@@ -11,7 +11,12 @@ export const SensitivitySchema = z.enum([
 export type Sensitivity = z.infer<typeof SensitivitySchema>;
 
 export const ParamTypeSchema = z.enum(["string", "number", "boolean"]);
-export const OutputTypeSchema = z.enum(["string", "number", "boolean", "money"]);
+export const OutputTypeSchema = z.enum([
+  "string",
+  "number",
+  "boolean",
+  "money",
+]);
 
 export const ParameterSchema = z.strictObject({
   name: z.string().min(1),
@@ -109,6 +114,7 @@ export type ExceptionThen = z.infer<typeof ExceptionThenSchema>;
 
 export const ExceptionHandlerSchema = z.strictObject({
   match: ObservationMatchSchema,
+  // biome-ignore lint/suspicious/noThenProperty: handler verb in the artifact, not a thenable
   then: ExceptionThenSchema,
 });
 export type ExceptionHandler = z.infer<typeof ExceptionHandlerSchema>;
@@ -218,7 +224,11 @@ export const CapabilitySchema = z
     }
 
     for (const [index, step] of capability.steps.entries()) {
-      if ("value" in step && step.value.kind === "param" && !paramNames.has(step.value.name)) {
+      if (
+        "value" in step &&
+        step.value.kind === "param" &&
+        !paramNames.has(step.value.name)
+      ) {
         ctx.addIssue({
           code: "custom",
           message: `step value refers to unknown parameter "${step.value.name}"`,
