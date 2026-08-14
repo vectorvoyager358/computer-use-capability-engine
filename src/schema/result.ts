@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const EventSchema = z.strictObject({
-  type: z.enum(["acted", "recovered", "checkpoint", "escalated"]),
+  type: z.enum(["acted", "recovered", "checkpoint", "escalated", "human"]),
   stepId: z.string().min(1).optional(),
   detail: z.string().min(1),
 });

@@ -4,7 +4,7 @@ LLM-driven computer-use system that discovers UI workflows, records them as reus
 
 ## Status
 
-The capability schema, replay result contract, and a local core-servicing target app are in place. Discovery, replay, and human handoff are not built yet.
+The capability schema, local core-servicing app, deterministic replay, policy, and human handoff are in place. Discovery is not built yet.
 
 ## Setup
 
@@ -12,6 +12,7 @@ Requires Node 22.12+.
 
 ```bash
 npm install
+npx playwright install chromium
 npm run check
 ```
 
