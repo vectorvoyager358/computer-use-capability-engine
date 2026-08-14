@@ -8,7 +8,13 @@ describe("ReplayResultSchema", () => {
       capabilityId: "lookup-member-savings",
       revision: 1,
       outputs: { savingsBalance: "$1,240.50" },
-      events: [{ type: "checkpoint", stepId: "extract-balance", detail: "heading Member detail" }],
+      events: [
+        {
+          type: "checkpoint",
+          stepId: "extract-balance",
+          detail: "heading Member detail",
+        },
+      ],
     });
 
     expect(result.status).toBe("success");
@@ -47,7 +53,13 @@ describe("ReplayResultSchema", () => {
       expected: "button Search",
       observed: "dialog: Session expired",
       evidencePath: "evidence/replay-failed.png",
-      events: [{ type: "acted", stepId: "click-search", detail: "locator miss after retries" }],
+      events: [
+        {
+          type: "acted",
+          stepId: "click-search",
+          detail: "locator miss after retries",
+        },
+      ],
     });
 
     expect(result.status).toBe("failed");
@@ -64,7 +76,13 @@ describe("ReplayResultSchema", () => {
       revision: 1,
       stepId: "click-search",
       reason: "unhandled confirmation dialog",
-      events: [{ type: "escalated", stepId: "click-search", detail: "control ceded to human" }],
+      events: [
+        {
+          type: "escalated",
+          stepId: "click-search",
+          detail: "control ceded to human",
+        },
+      ],
     });
 
     expect(result.status).toBe("escalated");

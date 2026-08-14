@@ -1,19 +1,19 @@
 export {
-  SCHEMA_VERSION,
-  CapabilitySchema,
-  parseCapability,
   type Capability,
-  type Step,
+  CapabilitySchema,
   type Locator,
   type LocatorSet,
-  type Parameter,
   type OutputField,
+  type Parameter,
+  parseCapability,
   type Risk,
+  SCHEMA_VERSION,
   type Sensitivity,
+  type Step,
 } from "./capability";
 
 export {
-  ReplayResultSchema,
   parseReplayResult,
   type ReplayResult,
+  ReplayResultSchema,
 } from "./result";

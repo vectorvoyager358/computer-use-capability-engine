@@ -4,7 +4,7 @@ LLM-driven computer-use system that discovers UI workflows, records them as reus
 
 ## Status
 
-The capability schema and replay result contract are in place. Discovery, replay, the target app, and human handoff are not built yet.
+The capability schema, local core-servicing app, deterministic replay, policy, and human handoff are in place. Discovery is not built yet.
 
 ## Setup
 
@@ -12,11 +12,17 @@ Requires Node 22.12+.
 
 ```bash
 npm install
-npm test
-npm run typecheck
+npx playwright install chromium
+npm run check
 ```
 
-No API keys needed for the current code.
+Start the local target app (no API keys):
+
+```bash
+npm run app
+```
+
+It listens on `http://127.0.0.1:4173/`. Member `10001` has a savings balance; any other id returns "Member not found".
 
 ## Demo
 
