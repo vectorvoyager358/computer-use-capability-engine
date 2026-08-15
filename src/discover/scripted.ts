@@ -34,6 +34,12 @@ export function lookupMemberScript(memberId: string): Decision[] {
       reason: "submit the inquiry",
     },
     {
+      type: "click",
+      role: "button",
+      name: "Continue",
+      reason: "dismiss the session warning",
+    },
+    {
       type: "extract",
       rowText: "Savings",
       columnHeader: "Balance",

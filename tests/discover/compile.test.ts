@@ -16,6 +16,7 @@ describe("compileCapability", () => {
           value: "10001",
         },
         { action: "click", role: "button", name: "Search" },
+        { action: "click", role: "button", name: "Continue" },
         {
           action: "extract",
           rowText: "Savings",
@@ -47,10 +48,13 @@ describe("compileCapability", () => {
       name: "memberId",
     });
     const click = capability.steps.find((step) => step.action === "click");
-    expect(click?.on?.[0]?.then).toEqual({
-      type: "business_outcome",
-      code: "member_not_found",
-    });
+    expect(click?.on?.map((handler) => handler.then.type)).toEqual([
+      "business_outcome",
+      "recover",
+    ]);
+    expect(capability.steps.some((step) => step.id.includes("continue"))).toBe(
+      false,
+    );
   });
 
   it("normalizes bad extract names, drops duplicate cells, and rejects a money checkpoint", () => {

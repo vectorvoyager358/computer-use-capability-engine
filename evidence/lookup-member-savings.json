@@ -69,6 +69,25 @@
             "type": "business_outcome",
             "code": "member_not_found"
           }
+        },
+        {
+          "match": {
+            "kind": "dialog",
+            "value": "Your session is about to expire."
+          },
+          "then": {
+            "type": "recover",
+            "action": "dismiss",
+            "target": {
+              "candidates": [
+                {
+                  "strategy": "role_name",
+                  "role": "button",
+                  "name": "Continue"
+                }
+              ]
+            }
+          }
         }
       ],
       "action": "click",
@@ -103,8 +122,6 @@
       "kind": "heading",
       "value": "Member detail"
     },
-    "outputs": [
-      "savingsBalance"
-    ]
+    "outputs": ["savingsBalance"]
   }
 }

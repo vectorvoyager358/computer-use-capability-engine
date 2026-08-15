@@ -3,6 +3,7 @@ import { ScriptedOperator } from "../../src/handoff/scripted";
 import { replay } from "../../src/replay/engine";
 import { parseCapability } from "../../src/schema/capability";
 import { RunSession } from "../../src/session/session";
+import { LocatorError } from "../../src/surface/surface";
 import { RecordingSurface } from "../helpers/recording-surface";
 
 const clickTarget = {
@@ -144,5 +145,89 @@ describe("HITL handoff", () => {
       expect(result.reason).toContain("irreversible");
     }
     expect(result.events.some((event) => event.type === "human")).toBe(true);
+  });
+
+  it("cedes the same surface on a locator miss when a handoff is present", async () => {
+    class MissingClickSurface extends RecordingSurface {
+      async click() {
+        throw new LocatorError('button "Go"', "(empty page)");
+      }
+    }
+    const surface = new MissingClickSurface();
+    const session = new RunSession(surface);
+    let reason = "";
+
+    const result = await replay(
+      capability({
+        steps: [
+          {
+            id: "submit",
+            action: "click",
+            target: clickTarget,
+            risk: "read",
+          },
+        ],
+      }),
+      {
+        surface,
+        session,
+        handoff: new ScriptedOperator(async (owned, request) => {
+          expect(owned.owner).toBe("human");
+          reason = request.reason;
+          return {
+            actions: [{ type: "other", detail: "clicked the real control" }],
+            resume: "skip_step",
+          };
+        }),
+      },
+    );
+
+    expect(reason).toContain("locator miss");
+    expect(result.status).toBe("success");
+    expect(session.owner).toBe("automation");
+    expect(result.events.some((event) => event.type === "human")).toBe(true);
+  });
+
+  it("fails a locator miss if retry still cannot find the control", async () => {
+    class MissingClickSurface extends RecordingSurface {
+      async click() {
+        throw new LocatorError('button "Go"', "(empty page)");
+      }
+    }
+    const surface = new MissingClickSurface();
+    const session = new RunSession(surface);
+    let interventions = 0;
+
+    const result = await replay(
+      capability({
+        steps: [
+          {
+            id: "submit",
+            action: "click",
+            target: clickTarget,
+            risk: "read",
+          },
+        ],
+      }),
+      {
+        surface,
+        session,
+        handoff: new ScriptedOperator(async () => {
+          interventions += 1;
+          return {
+            actions: [{ type: "other", detail: "asked to retry locators" }],
+            resume: "retry_step",
+          };
+        }),
+      },
+    );
+
+    expect(interventions).toBe(1);
+    expect(result.status).toBe("failed");
+    expect(session.owner).toBe("automation");
+    if (result.status === "failed") {
+      expect(result.stepId).toBe("submit");
+      expect(result.expected).toContain("Go");
+    }
   });
 });

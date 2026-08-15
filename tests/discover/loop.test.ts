@@ -45,6 +45,9 @@ describe("discover lookup-member-savings", () => {
     if (replayed.status === "success") {
       expect(replayed.outputs.savingsBalance).toBe("$1,240.50");
     }
+    expect(replayed.events.some((event) => event.type === "recovered")).toBe(
+      true,
+    );
   }, 30_000);
 
   it("escalates when the model gives up and there is no handoff", async () => {

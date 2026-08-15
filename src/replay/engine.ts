@@ -129,7 +129,38 @@ export async function replay(
     return outcome.resume;
   };
 
+  const settle = async (
+    step: Step,
+  ): Promise<ReplayResult | "continue" | "retry"> => {
+    const observation = await surface.observe();
+    const handler = matchingHandler(step.on, observation);
+    if (!handler) return "continue";
+
+    const handled = await applyHandler(handler, step, {
+      surface,
+      events,
+    });
+    if (handled === "continue") return "continue";
+    if (handled.status === "business_outcome") {
+      return parseReplayResult({
+        status: "business_outcome",
+        capabilityId: capability.id,
+        revision: capability.revision,
+        code: handled.code,
+        events,
+      });
+    }
+    if (handled.status === "escalated") {
+      const next = await escalate(step, handled.reason);
+      if (next === "skip_step") return "continue";
+      if (next === "retry_step") return "retry";
+      return next;
+    }
+    return fail(step, handled.expected, handled.observed);
+  };
+
   let index = 0;
+  const locatorHandoff = new Set<string>();
   while (index < capability.steps.length) {
     const step = capability.steps[index];
     if (!step) break;
@@ -153,8 +184,13 @@ export async function replay(
     if (denial?.kind === "escalate") {
       const next = await escalate(step, denial.reason);
       if (next === "skip_step") {
-        index += 1;
-        continue;
+        const settled = await settle(step);
+        if (settled === "continue") {
+          index += 1;
+          continue;
+        }
+        if (settled === "retry") continue;
+        return settled;
       }
       if (next === "retry_step") continue;
       return next;
@@ -178,7 +214,22 @@ export async function replay(
           stepId: step.id,
           detail: "locator miss after retries",
         });
-        return fail(step, error.expected, error.observed);
+        if (!options.handoff || locatorHandoff.has(step.id)) {
+          return fail(step, error.expected, error.observed);
+        }
+        locatorHandoff.add(step.id);
+        const next = await escalate(step, `locator miss: ${error.expected}`);
+        if (next === "skip_step") {
+          const settled = await settle(step);
+          if (settled === "continue") {
+            index += 1;
+            continue;
+          }
+          if (settled === "retry") continue;
+          return settled;
+        }
+        if (next === "retry_step") continue;
+        return next;
       }
       if (
         error instanceof Error &&
@@ -195,40 +246,13 @@ export async function replay(
       detail: describeStep(step),
     });
 
-    const observation = await surface.observe();
-    const handler = matchingHandler(step.on, observation);
-    if (!handler) {
+    const settled = await settle(step);
+    if (settled === "continue") {
       index += 1;
       continue;
     }
-
-    const handled = await applyHandler(handler, step, {
-      surface,
-      events,
-    });
-    if (handled === "continue") {
-      index += 1;
-      continue;
-    }
-    if (handled.status === "business_outcome") {
-      return parseReplayResult({
-        status: "business_outcome",
-        capabilityId: capability.id,
-        revision: capability.revision,
-        code: handled.code,
-        events,
-      });
-    }
-    if (handled.status === "escalated") {
-      const next = await escalate(step, handled.reason);
-      if (next === "skip_step") {
-        index += 1;
-        continue;
-      }
-      if (next === "retry_step") continue;
-      return next;
-    }
-    return fail(step, handled.expected, handled.observed);
+    if (settled === "retry") continue;
+    return settled;
   }
 
   const checkpoint = capability.success.checkpoint;
@@ -365,8 +389,28 @@ async function applyHandler(
     case "recover": {
       const attempts = then.maxAttempts ?? 1;
       for (let i = 0; i < attempts; i += 1) {
-        if (then.action === "dismiss" && "target" in step) {
-          await ctx.surface.dismiss(step.target);
+        if (then.action === "dismiss") {
+          const target =
+            then.target ?? ("target" in step ? step.target : undefined);
+          if (!target) {
+            return {
+              status: "failed",
+              expected: "recover dismiss target",
+              observed: (await ctx.surface.observe()).text.slice(0, 240),
+            };
+          }
+          try {
+            await ctx.surface.dismiss(target);
+          } catch (error) {
+            if (error instanceof LocatorError) {
+              return {
+                status: "failed",
+                expected: error.expected,
+                observed: error.observed,
+              };
+            }
+            throw error;
+          }
         } else if (then.action === "wait") {
           await new Promise((resolve) => setTimeout(resolve, 250));
         }
@@ -377,6 +421,9 @@ async function applyHandler(
         });
         const again = matchingHandler(step.on, await ctx.surface.observe());
         if (!again) return "continue";
+        if (again.then.type !== "recover") {
+          return applyHandler(again, step, ctx);
+        }
       }
       return {
         status: "failed",

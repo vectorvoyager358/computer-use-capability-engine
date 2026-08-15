@@ -46,6 +46,30 @@ describe("replay lookup-member-savings", () => {
     if (result.status === "success") {
       expect(result.outputs.savingsBalance).toBe("$1,240.50");
     }
+    expect(
+      result.events.some(
+        (event) =>
+          event.type === "recovered" && event.stepId === "click-search",
+      ),
+    ).toBe(true);
+  }, 30_000);
+
+  it("replays the same capability for member 10002 without rediscovering", async () => {
+    const app = await startApp();
+    apps.push(app);
+    const surface = await PlaywrightWebSurface.launch();
+    surfaces.push(surface);
+
+    const result = await replay(fixture, {
+      surface,
+      entryPoint: `${app.baseUrl}/`,
+      params: { memberId: "10002" },
+    });
+
+    expect(result.status).toBe("success");
+    if (result.status === "success") {
+      expect(result.outputs.savingsBalance).toBe("$50.00");
+    }
   }, 30_000);
 
   it("returns member_not_found as a business outcome, not a failure", async () => {
@@ -64,6 +88,9 @@ describe("replay lookup-member-savings", () => {
     if (result.status === "business_outcome") {
       expect(result.code).toBe("member_not_found");
     }
+    expect(result.events.some((event) => event.type === "recovered")).toBe(
+      false,
+    );
   }, 30_000);
 
   it("fails with step, expected, and observed when a locator misses", async () => {
@@ -135,6 +162,63 @@ describe("replay lookup-member-savings", () => {
         return {
           actions: [
             { type: "click", detail: "clicked Search on live session" },
+          ],
+          resume: "skip_step",
+        };
+      }),
+    });
+
+    expect(result.status).toBe("success");
+    expect(session.owner).toBe("automation");
+    if (result.status === "success") {
+      expect(result.outputs.savingsBalance).toBe("$1,240.50");
+    }
+    expect(result.events.some((event) => event.type === "human")).toBe(true);
+  }, 30_000);
+
+  it("hands the live page to a human when a locator misses, then resumes", async () => {
+    const app = await startApp();
+    apps.push(app);
+    const surface = await PlaywrightWebSurface.launch();
+    surfaces.push(surface);
+    const session = new RunSession(surface);
+
+    const broken = parseCapability({
+      ...fixture,
+      steps: fixture.steps.map((step) =>
+        step.id === "click-search"
+          ? {
+              ...step,
+              target: {
+                candidates: [
+                  {
+                    strategy: "role_name",
+                    role: "button",
+                    name: "Definitely not a button",
+                  },
+                ],
+              },
+            }
+          : step,
+      ),
+    });
+
+    const result = await replay(broken, {
+      surface,
+      session,
+      entryPoint: `${app.baseUrl}/`,
+      params: { memberId: "10001" },
+      handoff: new ScriptedOperator(async (owned, request) => {
+        expect(owned.owner).toBe("human");
+        expect(request.reason).toContain("locator miss");
+        await owned.surface.click({
+          candidates: [
+            { strategy: "role_name", role: "button", name: "Search" },
+          ],
+        });
+        return {
+          actions: [
+            { type: "click", detail: "clicked Search after locator miss" },
           ],
           resume: "skip_step",
         };

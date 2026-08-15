@@ -70,6 +70,7 @@ export function compileCapability(input: {
       continue;
     }
     if (act.action === "click") {
+      if (act.name === "Continue") continue;
       lastClickIndexByName.set(act.name, steps.length);
       steps.push({
         id: `click-${slug(act.name)}`,
@@ -96,31 +97,44 @@ export function compileCapability(input: {
     });
   }
 
+  const searchIndex = lastClickIndexByName.get("Search");
+  const outcomeIndex = searchIndex ?? [...lastClickIndexByName.values()].at(-1);
   const outcomes =
     input.done.businessOutcomes && input.done.businessOutcomes.length > 0
       ? input.done.businessOutcomes
-      : lastClickIndexByName.has("Search")
+      : searchIndex !== undefined
         ? [{ matchText: "Member not found", code: "member_not_found" }]
         : [];
-  for (const outcome of outcomes) {
-    const searchIndex =
-      lastClickIndexByName.get("Search") ??
-      [...lastClickIndexByName.values()].at(-1);
-    if (searchIndex === undefined) continue;
-    const step = steps[searchIndex];
-    if (step?.action !== "click") continue;
-    const existing = step.on ?? [];
-    steps[searchIndex] = {
-      ...step,
-      on: [
-        ...existing,
-        {
-          match: { kind: "text", value: outcome.matchText },
+  if (outcomeIndex !== undefined) {
+    const click = steps[outcomeIndex];
+    if (click?.action === "click") {
+      const handlers = [
+        ...(click.on ?? []),
+        ...outcomes.map((outcome) => ({
+          match: { kind: "text" as const, value: outcome.matchText },
           // biome-ignore lint/suspicious/noThenProperty: handler verb in the artifact, not a thenable
-          then: { type: "business_outcome", code: outcome.code },
-        },
-      ],
-    };
+          then: {
+            type: "business_outcome" as const,
+            code: outcome.code,
+          },
+        })),
+      ];
+      if (searchIndex !== undefined) {
+        handlers.push({
+          match: {
+            kind: "dialog" as const,
+            value: "Your session is about to expire.",
+          },
+          // biome-ignore lint/suspicious/noThenProperty: handler verb in the artifact, not a thenable
+          then: {
+            type: "recover" as const,
+            action: "dismiss" as const,
+            target: roleTarget("button", "Continue"),
+          },
+        });
+      }
+      steps[outcomeIndex] = { ...click, on: handlers };
+    }
   }
 
   const parameters = [...paramNames].map((name) => ({
