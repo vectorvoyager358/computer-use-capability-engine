@@ -1,5 +1,5 @@
 import type { Checkpoint, LocatorSet } from "../../src/schema/capability";
-import type { Observation, Surface } from "../../src/surface/surface";
+import type { Control, Observation, Surface } from "../../src/surface/surface";
 
 export class RecordingSurface implements Surface {
   readonly gotos: string[] = [];
@@ -25,6 +25,10 @@ export class RecordingSurface implements Surface {
 
   async observe(): Promise<Observation> {
     return { url: this.gotos.at(-1) ?? "", text: "" };
+  }
+
+  async inventory(): Promise<Control[]> {
+    return [];
   }
 
   async checkpointMet(_checkpoint: Checkpoint) {

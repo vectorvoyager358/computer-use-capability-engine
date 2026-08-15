@@ -1,0 +1,23 @@
+{
+  "status": "business_outcome",
+  "capabilityId": "member-savings-balance-lookup",
+  "revision": 1,
+  "code": "member_not_found",
+  "events": [
+    {
+      "type": "acted",
+      "stepId": "open-app",
+      "detail": "navigate"
+    },
+    {
+      "type": "acted",
+      "stepId": "fill-member-id",
+      "detail": "fill from param.memberId"
+    },
+    {
+      "type": "acted",
+      "stepId": "click-search",
+      "detail": "click button \"Search\""
+    }
+  ]
+}

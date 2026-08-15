@@ -6,6 +6,7 @@ import {
 } from "playwright";
 import type { Checkpoint, Locator, LocatorSet } from "../schema/capability";
 import {
+  type Control,
   describeTarget,
   LocatorError,
   type Observation,
@@ -66,6 +67,36 @@ export class PlaywrightWebSurface implements Surface {
       text: await this.page.locator("body").innerText(),
       dialog: dialogText,
     };
+  }
+
+  async inventory(): Promise<Control[]> {
+    const roles = [
+      "textbox",
+      "button",
+      "link",
+      "heading",
+      "combobox",
+      "checkbox",
+    ] as const;
+    const controls: Control[] = [];
+    for (const role of roles) {
+      const loc = this.page.getByRole(role);
+      const count = await loc.count();
+      for (let i = 0; i < count; i += 1) {
+        const name = await accessibleName(loc.nth(i));
+        if (!name) continue;
+        const control: Control = { role, name };
+        if (role === "textbox" || role === "combobox") {
+          const value = await loc
+            .nth(i)
+            .inputValue()
+            .catch(() => "");
+          if (value) control.value = value;
+        }
+        controls.push(control);
+      }
+    }
+    return controls;
   }
 
   async checkpointMet(checkpoint: Checkpoint) {
@@ -166,4 +197,33 @@ export class PlaywrightWebSurface implements Surface {
 
 function asRole(role: string): Parameters<Page["getByRole"]>[0] {
   return role as Parameters<Page["getByRole"]>[0];
+}
+
+async function accessibleName(locator: PwLocator): Promise<string> {
+  return locator.evaluate((el) => {
+    const node = el as {
+      getAttribute: (name: string) => string | null;
+      id: string;
+      type?: string;
+      value?: string;
+      textContent: string | null;
+      ownerDocument: {
+        querySelector: (
+          selector: string,
+        ) => { textContent: string | null } | null;
+      };
+    };
+    const labelled = node.getAttribute("aria-label");
+    if (labelled?.trim()) return labelled.trim();
+    if (node.type === "submit" || node.type === "button") {
+      return (node.value ?? "").trim();
+    }
+    if (node.id) {
+      const label = node.ownerDocument.querySelector(
+        `label[for="${node.id.replaceAll('"', '\\"')}"]`,
+      );
+      if (label?.textContent?.trim()) return label.textContent.trim();
+    }
+    return (node.textContent ?? "").replace(/\s+/g, " ").trim();
+  });
 }

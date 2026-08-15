@@ -1,0 +1,110 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "member-savings-balance-lookup",
+  "name": "Member savings balance lookup",
+  "description": "Retrieve the savings balance for member [memberId]",
+  "revision": 1,
+  "app": {
+    "family": "core-servicing",
+    "surface": "web",
+    "entryPoint": "http://127.0.0.1:4173/"
+  },
+  "parameters": [
+    {
+      "name": "memberId",
+      "type": "string",
+      "sensitivity": "identifier",
+      "description": "Invocation parameter memberId"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "savingsBalance",
+      "type": "money",
+      "sensitivity": "financial",
+      "description": "Value of Savings / Balance"
+    }
+  ],
+  "steps": [
+    {
+      "id": "open-app",
+      "risk": "read",
+      "action": "navigate",
+      "url": {
+        "kind": "entry"
+      }
+    },
+    {
+      "id": "fill-member-id",
+      "risk": "reversible",
+      "action": "fill",
+      "target": {
+        "candidates": [
+          {
+            "strategy": "role_name",
+            "role": "textbox",
+            "name": "Member ID"
+          },
+          {
+            "strategy": "label",
+            "label": "Member ID"
+          }
+        ]
+      },
+      "value": {
+        "kind": "param",
+        "name": "memberId"
+      }
+    },
+    {
+      "id": "click-search",
+      "risk": "read",
+      "on": [
+        {
+          "match": {
+            "kind": "text",
+            "value": "Member not found"
+          },
+          "then": {
+            "type": "business_outcome",
+            "code": "member_not_found"
+          }
+        }
+      ],
+      "action": "click",
+      "target": {
+        "candidates": [
+          {
+            "strategy": "role_name",
+            "role": "button",
+            "name": "Search"
+          }
+        ]
+      }
+    },
+    {
+      "id": "extract-savingsbalance",
+      "risk": "read",
+      "action": "extract",
+      "target": {
+        "candidates": [
+          {
+            "strategy": "table_cell",
+            "rowText": "Savings",
+            "columnHeader": "Balance"
+          }
+        ]
+      },
+      "output": "savingsBalance"
+    }
+  ],
+  "success": {
+    "checkpoint": {
+      "kind": "heading",
+      "value": "Member detail"
+    },
+    "outputs": [
+      "savingsBalance"
+    ]
+  }
+}
