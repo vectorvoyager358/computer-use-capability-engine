@@ -49,6 +49,18 @@ describe("core-servicing app", () => {
     expect(html).toContain("<th>Account</th><th>Balance</th>");
     expect(html).toContain("<td>Savings</td>");
     expect(html).toContain("<td>$1,240.50</td>");
+    expect(html).toContain('role="dialog"');
+    expect(html).toContain("Your session is about to expire.");
+    expect(html).toContain('id="cmd2" value="Continue"');
+    expect(html).toContain('id="member-body" hidden');
+    expect(html).not.toContain("Member not found");
+  });
+
+  it("shows a different savings balance for member 10002", async () => {
+    const html = await page(await start(), "/member?id=10002");
+
+    expect(html).toContain("<h1>Member detail</h1>");
+    expect(html).toContain("<td>$50.00</td>");
     expect(html).not.toContain("Member not found");
   });
 

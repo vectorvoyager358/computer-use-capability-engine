@@ -8,6 +8,8 @@
   },
   "scripts": {
     "app": "node apps/core-servicing/server.ts",
+    "discover": "tsx src/cli.ts discover",
+    "replay": "tsx src/cli.ts replay",
     "lint": "biome check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -21,6 +23,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.8",
     "@types/node": "26.2.0",
+    "tsx": "4.23.12",
     "typescript": "7.0.2",
     "vitest": "4.1.10"
   }

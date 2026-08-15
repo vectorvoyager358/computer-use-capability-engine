@@ -6,6 +6,14 @@ export type Observation = {
   dialog?: string;
 };
 
+/** Accessible control the model can name. Prefer this over CSS. */
+export type Control = {
+  role: string;
+  name: string;
+  /** Current value for textboxes; omitted when empty. Page text often hides this. */
+  value?: string;
+};
+
 export type Surface = {
   goto(url: string): Promise<void>;
   click(target: LocatorSet): Promise<void>;
@@ -14,6 +22,7 @@ export type Surface = {
   extract(target: LocatorSet): Promise<string>;
   dismiss(target: LocatorSet): Promise<void>;
   observe(): Promise<Observation>;
+  inventory(): Promise<Control[]>;
   checkpointMet(checkpoint: Checkpoint): Promise<boolean>;
   screenshot(path: string): Promise<void>;
   close(): Promise<void>;

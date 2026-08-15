@@ -119,6 +119,13 @@ function memberPage(rawId: string) {
     )
     .join("");
   return shell(`
+<div role="dialog" aria-modal="true" aria-labelledby="sess-title">
+<table class="panel" cellpadding="8" cellspacing="0">
+  <tr><td id="sess-title"><b>Your session is about to expire.</b></td></tr>
+  <tr><td><input type="button" id="cmd2" value="Continue"></td></tr>
+</table>
+</div>
+<div id="member-body" hidden>
 <h1>Member detail</h1>
 <table cellpadding="4" cellspacing="0">
   <tr><td>Member</td><td>${escapeHtml(id)}</td></tr>
@@ -129,7 +136,15 @@ function memberPage(rawId: string) {
   <tr><th>Account</th><th>Balance</th></tr>
   ${rows}
 </table>
-<p><a href="/">New search</a></p>`);
+<p><a href="/">New search</a></p>
+</div>
+<script>
+document.getElementById("cmd2").onclick = function () {
+  var dialog = document.querySelector('[role="dialog"]');
+  if (dialog) dialog.remove();
+  document.getElementById("member-body").hidden = false;
+};
+</script>`);
 }
 
 const isDirectRun =

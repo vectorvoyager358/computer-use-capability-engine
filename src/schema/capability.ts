@@ -100,6 +100,8 @@ export const ExceptionThenSchema = z.discriminatedUnion("type", [
     type: z.literal("recover"),
     action: z.enum(["dismiss", "retry", "wait"]),
     maxAttempts: z.number().int().positive().optional(),
+    /** Control to dismiss; defaults to the step target when omitted. */
+    target: LocatorSetSchema.optional(),
   }),
   z.strictObject({
     type: z.literal("escalate"),

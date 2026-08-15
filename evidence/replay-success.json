@@ -1,0 +1,39 @@
+{
+  "status": "success",
+  "capabilityId": "member-savings-balance-lookup",
+  "revision": 1,
+  "outputs": {
+    "savingsBalance": "$1,240.50"
+  },
+  "events": [
+    {
+      "type": "acted",
+      "stepId": "open-app",
+      "detail": "navigate"
+    },
+    {
+      "type": "acted",
+      "stepId": "fill-member-id",
+      "detail": "fill from param.memberId"
+    },
+    {
+      "type": "acted",
+      "stepId": "click-search",
+      "detail": "click button \"Search\""
+    },
+    {
+      "type": "recovered",
+      "stepId": "click-search",
+      "detail": "dismiss (1/1)"
+    },
+    {
+      "type": "acted",
+      "stepId": "extract-savingsbalance",
+      "detail": "extract savingsBalance"
+    },
+    {
+      "type": "checkpoint",
+      "detail": "heading \"Member detail\""
+    }
+  ]
+}

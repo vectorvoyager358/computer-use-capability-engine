@@ -1,0 +1,78 @@
+{
+  "goal": "Look up the member savings balance",
+  "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+  "events": [
+    {
+      "type": "acted",
+      "detail": "navigate entry"
+    },
+    {
+      "type": "decided",
+      "detail": "fill Member ID"
+    },
+    {
+      "type": "acted",
+      "detail": "fill Member ID"
+    },
+    {
+      "type": "decided",
+      "detail": "click Search"
+    },
+    {
+      "type": "acted",
+      "detail": "click Search"
+    },
+    {
+      "type": "decided",
+      "detail": "extract string"
+    },
+    {
+      "type": "acted",
+      "detail": "extract string"
+    },
+    {
+      "type": "decided",
+      "detail": "extract 1240.50"
+    },
+    {
+      "type": "acted",
+      "detail": "extract 1240.50"
+    },
+    {
+      "type": "decided",
+      "detail": "extract 1240.50"
+    },
+    {
+      "type": "acted",
+      "detail": "extract 1240.50"
+    },
+    {
+      "type": "decided",
+      "detail": "extract 1240.50"
+    },
+    {
+      "type": "acted",
+      "detail": "extract 1240.50"
+    },
+    {
+      "type": "decided",
+      "detail": "extract 1240.50"
+    },
+    {
+      "type": "acted",
+      "detail": "extract 1240.50"
+    },
+    {
+      "type": "decided",
+      "detail": "extract 1240.50"
+    },
+    {
+      "type": "acted",
+      "detail": "extract 1240.50"
+    },
+    {
+      "type": "decided",
+      "detail": "done: Goal accomplished - savings balance extracted from member detail page"
+    }
+  ]
+}
